@@ -12,7 +12,7 @@
 <script>
 const jsPsych = initJsPsych({
   on_finish: function() {
-    jsPsych.data.displayData();
+    jsPsych.data.get().localSave('csv', 'stroop_task_results.csv');
   }
 });
 
@@ -65,21 +65,35 @@ const stroop_trial = {
   }
 };
 
-  const save_data = {
-    type: jsPsychPipe,
-    action: "save",
-    experiment_id: "zenXLoyKXbE6",
-    filename: "stroop_data.csv",
-    data_string: () => jsPsych.data.get().csv(),
-  };
+const save_data = {
+  type: jsPsychPipe,
+  action: "save",
+  experiment_id: "YOUR_EXPERIMENT_ID_HERE",
+  filename: "stroop_data.csv",
+  data_string: () => jsPsych.data.get().csv()
+};
 
-  const trial_timeline = {
-    timeline: [ready, stroop],
-    timeline_variables: trials.map(trial => ({ trial: trial }))
-  };
+const timeline = [instructions];
 
-  const timeline = [instructions, trial_timeline, save_data];
+trials.forEach(trial => {
+  timeline.push(ready_screen);
+  timeline.push({
+    timeline: [stroop_trial],
+    timeline_variables: [{ trial: trial }]
+  });
+});
 
-  jsPsych.run(timeline);
+const timeline(save_data);
+
+const conclusion = {
+  type: jsPsychHtmlButtonResponse,
+  stimulus: '<p>Great job! You\'ve completed the Stroop Task.</p>' +
+            '<p>Click below to see your results.</p>',
+  choices: ['See Results']
+};
+
+timeline.push(conclusion);
+
+jsPsych.run(timeline);
 </script>
 </html>
