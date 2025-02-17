@@ -5,6 +5,7 @@
   <script src="https://unpkg.com/jspsych@7.3.4"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
   <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+  <script src="https://unpkg.com/@jspsych-contrib/plugin-pipe@0.4"></script>
   <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet">
 </head>
 <body></body>
@@ -64,6 +65,14 @@ const stroop_trial = {
   }
 };
 
+const save_data = {
+  type: jsPsychPipe,
+  action: "save",
+  experiment_id: "Kgcm09u6d9RN",
+  filename: "stroop_data.csv",
+  data_string: () => jsPsych.data.get().csv()
+};
+
 const timeline = [instructions];
 
 trials.forEach(trial => {
@@ -73,6 +82,8 @@ trials.forEach(trial => {
     timeline_variables: [{ trial: trial }]
   });
 });
+
+timeline.push(save_data);
 
 const conclusion = {
   type: jsPsychHtmlButtonResponse,
