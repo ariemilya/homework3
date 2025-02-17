@@ -10,90 +10,71 @@
 </head>
 <body></body>
 <script>
-const jsPsych = initJsPsych({
-  on_finish: function() {
-    jsPsych.data.get().localSave('csv', 'stroop_task_results.csv');
-  }
-});
+  const jsPsych = initJsPsych();
 
-const colors = ['red', 'blue', 'green'];
-let trials = [];
-
-colors.forEach(word => {
+  const colors = ["red", "blue", "green", "yellow"]; // Added 'yellow' for uniqueness
+  const words = ["red", "blue", "green", "yellow"]; // Matching words with colors
+  let trials = [];
   colors.forEach(color => {
-    for (let i = 0; i < 2; i++) {
-      trials.push({ word: word, color: color });
+    words.forEach(word => {
+      for (let i = 0; i < 2; i++) {
+        trials.push({
+          word: word,
+          color: color,
+          correct_response: word === color ? 'MATCH' : 'NOT'
+        });
+      }
+    });
+  });
+  trials = jsPsych.randomization.shuffle(trials);
+
+  const instructions = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: `<p>Welcome to the Stroop Task Experiment!</p>
+               <p>You will see color words displayed in various ink colors.</p>
+               <p>Your goal is to determine if the word meaning and ink color MATCH or NOT.</p>
+               <p>Be quick and accurate!</p>`,
+    choices: ["Begin"]
+  };
+
+  const ready = {
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: "<p>Get ready for the next trial! Press any key to continue.</p>",
+    choices: "ALL_KEYS"
+  };
+
+  const stroop = {
+    type: jsPsychHtmlButtonResponse,
+    stimulus: function() {
+      const trial = jsPsych.timelineVariable('trial');
+      return `<p style="color:${trial.color}; font-size: 40px;">${trial.word}</p>`;
+    },
+    choices: ["MATCH", "NOT"],
+    on_finish: function(data) {
+      const trial = jsPsych.timelineVariable('trial');
+      const buttonLabel = ["MATCH", "NOT"][data.response];
+      data.word = trial.word;
+      data.color = trial.color;
+      data.correct_response = trial.correct_response;
+      data.correct = (buttonLabel === trial.correct_response);
     }
-  });
-});
+  };
 
-trials = jsPsych.randomization.shuffle(trials);
+  const save_data = {
+    type: jsPsychPipe,
+    action: "save",
+    experiment_id: "Kgcm09u6d9RN",
+    filename: "stroop_data.csv",
+    data_string: () => jsPsych.data.get().csv(),
+  };
 
-const instructions = {
-  type: jsPsychHtmlButtonResponse,
-  stimulus: '<p><strong>Welcome to the Stroop Challenge!</strong></p>' +
-            '<p>Test your reaction speed and focus by determining if the color of the word matches its meaning.</p>' +
-            '<p>Click MATCH if they match, NOT if they don\'t.</p>' +
-            '<p>Press Start when you\'re ready!</p>',
-  choices: ['Start']
-};
+  const trial_timeline = {
+    timeline: [ready, stroop],
+    timeline_variables: trials.map(trial => ({ trial: trial }))
+  };
 
-const ready_screen = {
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: '<p>Take a deep breath. Get ready for the next round.</p><p>Press any key to continue.</p>',
-  post_trial_gap: 500
-};
+  const timeline = [instructions, trial_timeline, save_data];
 
-const stroop_trial = {
-  type: jsPsychHtmlButtonResponse,
-  stimulus: function() {
-    let trial = jsPsych.timelineVariable('trial');
-    let fontSize = Math.floor(Math.random() * 20) + 40;
-    return `<p style='color:${trial.color}; font-size: ${fontSize}px; font-weight:bold;'>${trial.word.toUpperCase()}</p>`;
-  },
-  choices: ['MATCH', 'NOT'],
-  data: function() {
-    let trial = jsPsych.timelineVariable('trial');
-    return {
-      word: trial.word,
-      color: trial.color,
-      congruent: trial.word === trial.color ? 1 : 0
-    };
-  },
-  on_finish: function(data) {
-    data.correct = (data.congruent === 1 && data.response === 0) || (data.congruent === 0 && data.response === 1);
-  }
-};
-
-const save_data = {
-  type: jsPsychPipe,
-  action: "save",
-  experiment_id: "Kgcm09u6d9RN",
-  filename: "stroop_data.csv",
-  data_string: () => jsPsych.data.get().csv()
-};
-
-const timeline = [instructions];
-
-trials.forEach(trial => {
-  timeline.push(ready_screen);
-  timeline.push({
-    timeline: [stroop_trial],
-    timeline_variables: [{ trial: trial }]
-  });
-});
-
-timeline.push(save_data);
-
-const conclusion = {
-  type: jsPsychHtmlButtonResponse,
-  stimulus: '<p>Great job! You\'ve completed the Stroop Task.</p>' +
-            '<p>Click below to see your results.</p>',
-  choices: ['See Results']
-};
-
-timeline.push(conclusion);
-
-jsPsych.run(timeline);
+  jsPsych.run(timeline);
 </script>
 </html>
